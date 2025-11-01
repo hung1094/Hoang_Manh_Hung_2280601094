@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "239930313729",
+    "firebase_url": "https://app-qlct-demo-02-default-rtdb.firebaseio.com",
+    "project_id": "app-qlct-demo-02",
+    "storage_bucket": "app-qlct-demo-02.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:239930313729:android:133f51049e7be09d474400",
+        "android_client_info": {
+          "package_name": "com.example.app_qlct_demo_02"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "239930313729-50ss9723hhgptosd3gljsqn39btdmid9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWRwK76YdfLyhGKq4ebo5Jzc1a1blEpnk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "239930313729-50ss9723hhgptosd3gljsqn39btdmid9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "239930313729-vo65900esom8c72dqh2l9oolbbg5t0as.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appQlctDemo02"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
