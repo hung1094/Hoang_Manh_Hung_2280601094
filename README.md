@@ -1,6 +1,10 @@
-# app_qlct_demo_02
+# app_qlct_demo_02 (Hoang_Manh_Hung_2280601094)
 
-A new Flutter project.
+## Mục đích dự án
+
+Đồ án môn Lập Trình Di Đông
+
+---
 
 ## Getting Started
 
