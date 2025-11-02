@@ -97,12 +97,13 @@ class AppConstants {
       decimalDigits: _getDecimalDigits(currencyCode),
     );
 
-    final formatted = format.format(amount.abs());
-
-    return amount >= 0 ? '+$formatted' : '-$formatted';
+    // Giữ dấu “–” nếu giá trị âm, còn lại bỏ dấu “+”
+    return amount < 0
+        ? '-${format.format(amount.abs())}'
+        : format.format(amount);
   }
 
-  // Compact format cho số lớn (1.2M, 1.2B)
+  // ====================== COMPACT CURRENCY (1.2M, 1.2B...) ======================
   static String formatCurrencyCompact(
     double amount,
     String currencyCode, [
@@ -122,12 +123,13 @@ class AppConstants {
       decimalDigits: _getDecimalDigits(currencyCode),
     );
 
-    final formatted = format.format(amount.abs());
-
-    return amount >= 0 ? '$formatted' : '$formatted';
+    // Giữ dấu “–” nếu giá trị âm, còn lại bỏ dấu “+”
+    return amount < 0
+        ? '-${format.format(amount.abs())}'
+        : format.format(amount);
   }
 
-  // Helper: Số chữ số thập phân
+  // ====================== Helper: Số chữ số thập phân ======================
   static int _getDecimalDigits(String code) {
     return ['VND', 'JPY'].contains(code) ? 0 : 2;
   }

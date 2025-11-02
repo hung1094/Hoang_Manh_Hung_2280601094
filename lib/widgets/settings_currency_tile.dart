@@ -8,22 +8,32 @@ class SettingsCurrencyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = Provider.of<SettingsViewModel>(context);
-    return ListTile(
-      title: const Text('Tiền tệ mặc định'),
-      trailing: DropdownButton<String>(
-        value: vm.currency,
-        items: AppConstants.currencies
-            .map(
-              (e) => DropdownMenuItem(
-                value: e.code,
-                child: Text('${e.name} (${e.symbol})'),
-              ),
-            )
-            .toList(),
-        onChanged: (value) => value != null ? vm.changeCurrency(value) : null,
-        underline: const SizedBox(),
-      ),
+    return Consumer<SettingsViewModel>(
+      builder: (context, vm, _) {
+        return ListTile(
+          leading: const Icon(Icons.currency_exchange, color: Colors.teal),
+          title: const Text('Tiền tệ mặc định'),
+          subtitle: Text(
+            AppConstants.currencies
+                .firstWhere((c) => c.code == vm.currency)
+                .name,
+          ),
+          trailing: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: vm.currency,
+              items: AppConstants.currencies.map((currency) {
+                return DropdownMenuItem<String>(
+                  value: currency.code,
+                  child: Text('${currency.symbol}  ${currency.code}'),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) vm.changeCurrency(value);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }

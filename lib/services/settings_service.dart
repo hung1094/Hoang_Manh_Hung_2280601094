@@ -1,41 +1,79 @@
+// lib/services/settings_service.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants.dart';
 
 class SettingsService {
-  static const _themeModeKey = 'themeMode';
-  static const _themeColorKey = 'themeColor';
-  static const _languageKey = 'language';
-  static const _currencyKey = 'currency';
-  static const _fontScaleKey = 'fontScale';
+  static const _keyLocale = 'locale';
+  static const _keyCurrency = 'currency';
+  static const _keyDarkMode = 'isDarkMode';
+  static const _keyFontScale = 'fontScale';
+  static const _keyThemeIndex = 'themeColorIndex';
 
-  /// Lưu cài đặt vào SharedPreferences
-  Future<void> saveSettings({
-    required bool isDarkMode,
-    required MaterialColor themeColor,
-    required String language,
-    required String currency,
-    required double fontScale,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_themeModeKey, isDarkMode);
-    await prefs.setInt(_themeColorKey, themeColor.value);
-    await prefs.setString(_languageKey, language);
-    await prefs.setString(_currencyKey, currency);
-    await prefs.setDouble(_fontScaleKey, fontScale);
+  SharedPreferences? _prefs;
+
+  /// ✅ Gọi 1 lần khi khởi động app
+  Future<void> init() async {
+    _prefs ??= await SharedPreferences.getInstance();
   }
 
-  /// Tải lại cài đặt khi khởi động
+  /// ✅ Lưu toàn bộ cài đặt
+  Future<void> saveSettings({
+    required Locale locale,
+    required String currency,
+    required bool isDarkMode,
+    required double fontScale,
+    required MaterialColor themeColor,
+  }) async {
+    await init();
+
+    final colorIndex = AppConstants.themeColors
+        .indexOf(themeColor)
+        .clamp(0, AppConstants.themeColors.length - 1);
+
+    await _prefs!.setString(_keyLocale, locale.languageCode);
+    await _prefs!.setString(_keyCurrency, currency);
+    await _prefs!.setBool(_keyDarkMode, isDarkMode);
+    await _prefs!.setDouble(_keyFontScale, fontScale);
+    await _prefs!.setInt(_keyThemeIndex, colorIndex);
+  }
+
+  /// ✅ Tải lại cài đặt từ SharedPreferences
   Future<Map<String, dynamic>> loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
+    await init();
+
+    final lang = _prefs!.getString(_keyLocale) ?? 'vi';
+    final currency = _prefs!.getString(_keyCurrency) ?? 'VND';
+    final isDark = _prefs!.getBool(_keyDarkMode) ?? false;
+    final scale = _prefs!.getDouble(_keyFontScale) ?? 1.0;
+    final colorIndex = _prefs!.getInt(_keyThemeIndex) ?? 0;
+
     return {
-      'isDarkMode': prefs.getBool(_themeModeKey) ?? false,
-      'themeColor': MaterialColor(
-        prefs.getInt(_themeColorKey) ?? Colors.yellow.value,
-        const <int, Color>{},
-      ),
-      'language': prefs.getString(_languageKey) ?? 'vi',
-      'currency': prefs.getString(_currencyKey) ?? 'VND',
-      'fontScale': prefs.getDouble(_fontScaleKey) ?? 1.0,
+      'locale': Locale(lang),
+      'currency': currency,
+      'isDarkMode': isDark,
+      'fontScale': scale,
+      'themeColor':
+          AppConstants.themeColors[colorIndex.clamp(
+            0,
+            AppConstants.themeColors.length - 1,
+          )],
     };
+  }
+
+  /// ✅ Cập nhật từng giá trị riêng lẻ
+  Future<void> updateSetting(String key, dynamic value) async {
+    await init();
+
+    if (value is String) await _prefs!.setString(key, value);
+    if (value is bool) await _prefs!.setBool(key, value);
+    if (value is double) await _prefs!.setDouble(key, value);
+    if (value is int) await _prefs!.setInt(key, value);
+  }
+
+  /// ✅ Xóa toàn bộ cài đặt (dành cho reset)
+  Future<void> resetSettings() async {
+    await init();
+    await _prefs!.clear();
   }
 }

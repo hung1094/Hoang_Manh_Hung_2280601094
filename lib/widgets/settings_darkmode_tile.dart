@@ -7,11 +7,19 @@ class SettingsDarkModeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = Provider.of<SettingsViewModel>(context);
-    return SwitchListTile(
-      title: const Text('Chế độ tối'),
-      value: vm.isDarkMode,
-      onChanged: vm.toggleTheme,
+    return Consumer<SettingsViewModel>(
+      builder: (context, vm, _) {
+        return SwitchListTile.adaptive(
+          title: const Text('Chế độ tối'),
+          subtitle: Text(vm.isDarkMode ? 'Đang bật' : 'Đang tắt'),
+          value: vm.isDarkMode,
+          onChanged: vm.toggleTheme,
+          secondary: Icon(
+            vm.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+            color: vm.isDarkMode ? Colors.amberAccent : Colors.blueGrey,
+          ),
+        );
+      },
     );
   }
 }

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 
+/// 🧩 Widget biểu tượng danh mục – dùng cho chọn loại giao dịch.
+/// Tối ưu hiệu suất, hiệu ứng chọn mượt mà và dễ tái sử dụng.
 class CategoryIcon extends StatelessWidget {
   final String name;
   final IconData icon;
-  final Color? color; // Màu tùy chỉnh
-  final double size; // Kích thước tùy chỉnh
-  final bool isSelected; // Trạng thái chọn
-  final VoidCallback? onTap; // Callback khi nhấn
+  final Color? color;
+  final double size;
+  final bool isSelected;
+  final VoidCallback? onTap;
 
   const CategoryIcon({
     super.key,
     required this.name,
     required this.icon,
     this.color,
-    this.size = 60.0, // Kích thước mặc định
+    this.size = 60.0,
     this.isSelected = false,
     this.onTap,
   });
@@ -22,46 +24,53 @@ class CategoryIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final effectiveColor =
-        color ?? (isSelected ? theme.primaryColor : theme.disabledColor);
+        color ??
+        (isSelected ? theme.colorScheme.primary : Colors.grey.shade600);
     final backgroundColor = isSelected
-        ? theme.primaryColor.withOpacity(0.1)
-        : Colors.grey[200] ?? Colors.grey[200];
+        ? theme.colorScheme.primary.withOpacity(0.15)
+        : Colors.grey.shade100;
 
     return GestureDetector(
       onTap: onTap,
       child: Tooltip(
         message: name,
+        waitDuration: const Duration(milliseconds: 400),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(4),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: backgroundColor,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(
-                    color: theme.shadowColor.withOpacity(0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
+                  if (isSelected)
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 3),
+                    )
+                  else
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 3,
+                      offset: const Offset(0, 2),
+                    ),
                 ],
               ),
-              child: CircleAvatar(
-                radius: size / 2,
-                backgroundColor: backgroundColor,
-                child: Icon(icon, size: size / 2, color: effectiveColor),
-              ),
+              child: Icon(icon, size: size * 0.5, color: effectiveColor),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: size / 6,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: size * 0.22,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: effectiveColor,
               ),
               textAlign: TextAlign.center,

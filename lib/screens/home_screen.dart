@@ -22,24 +22,29 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final DatabaseService _dbService = DatabaseService();
-  final HomeScreenViewModel _viewModel = HomeScreenViewModel();
+  final _dbService = DatabaseService();
+  final _viewModel = HomeScreenViewModel();
 
   int _selectedIndex = 0;
   int _currentPage = 0;
   bool _isLoadingMore = false;
+  bool _disposed = false;
 
-  // ✅ THÊM: Reset pagination khi Stream rebuild
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reset khi có dữ liệu mới (Stream rebuild)
     if (mounted) {
       setState(() {
         _currentPage = 0;
         _isLoadingMore = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   @override
@@ -54,13 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
         stream: _dbService.getTransactions(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                AppConstants.errorMessage,
-                style: textTheme.bodyMedium?.copyWith(color: Colors.red),
-                textAlign: TextAlign.center,
-              ),
-            );
+            return _buildErrorState(textTheme);
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -70,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final transactions = snapshot.data!;
           final summary = _viewModel.calculateSummary(transactions);
 
-          // ✅ AN TOÀN: Reset nếu total < page hiện tại
+          // Reset nếu quá giới hạn
           if (transactions.length <
               _currentPage * AppConstants.transactionsPerPage) {
             _currentPage = 0;
@@ -85,8 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           return NotificationListener<ScrollNotification>(
             onNotification: (scrollInfo) {
-              if (scrollInfo is ScrollEndNotification &&
-                  scrollInfo.metrics.extentAfter < 300 &&
+              if (scrollInfo.metrics.extentAfter < 300 &&
                   !_isLoadingMore &&
                   pagedTransactions.length < transactions.length) {
                 _loadMoreTransactions(transactions.length);
@@ -116,19 +114,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _loadMoreTransactions(int total) {
     if (_isLoadingMore ||
-        _currentPage * AppConstants.transactionsPerPage >= total) {
+        _currentPage * AppConstants.transactionsPerPage >= total)
       return;
-    }
 
     setState(() {
       _isLoadingMore = true;
       _currentPage++;
     });
 
-    // Simulate loading
     Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        setState(() => _isLoadingMore = false); // ĐÃ SỬA: BỎ DẤU GẠCH NGANG
+      if (mounted && !_disposed) {
+        setState(() => _isLoadingMore = false);
       }
     });
   }
@@ -161,18 +157,29 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 12),
-          child: CircleAvatar(
-            radius: AppConstants.avatarRadius,
-            backgroundColor: AppConstants.cardBackground(vm.isDarkMode),
-            child: Icon(
-              Icons.person,
-              color: vm.isDarkMode ? Colors.white70 : Colors.grey,
+          child: Hero(
+            tag: 'userAvatar',
+            child: CircleAvatar(
+              radius: AppConstants.avatarRadius,
+              backgroundColor: AppConstants.cardBackground(vm.isDarkMode),
+              child: Icon(
+                Icons.person,
+                color: vm.isDarkMode ? Colors.white70 : Colors.grey,
+              ),
             ),
           ),
         ),
       ],
     );
   }
+
+  Widget _buildErrorState(TextTheme textTheme) => Center(
+    child: Text(
+      AppConstants.errorMessage,
+      style: textTheme.bodyMedium?.copyWith(color: Colors.red),
+      textAlign: TextAlign.center,
+    ),
+  );
 
   Widget _buildHeader(
     Map<String, double> summary,
@@ -185,7 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Balance Card
             Container(
               padding: const EdgeInsets.all(AppConstants.cardPadding),
               decoration: BoxDecoration(
@@ -193,13 +199,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(
                   AppConstants.cardBorderRadius,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,13 +218,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    AppConstants.balanceLabel,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppConstants.textSecondary(vm.isDarkMode),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -281,13 +273,6 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: AppConstants.cardBackground(vm.isDarkMode),
             borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
-            boxShadow: [
-              BoxShadow(
-                color: AppConstants.shadowColor.withOpacity(0.1),
-                blurRadius: AppConstants.shadowBlurRadius,
-                offset: const Offset(0, 3),
-              ),
-            ],
           ),
           child: ListTile(
             leading: CircleAvatar(
@@ -296,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   (isIncome
                           ? AppConstants.incomeColor
                           : AppConstants.expenseColor)
-                      .withOpacity(0.1),
+                      .withOpacity(0.12),
               child: Icon(
                 isIncome
                     ? Icons.arrow_upward_rounded
@@ -315,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(color: Colors.grey),
             ),
             trailing: Text(
-              "${isIncome ? '+' : '-'}${AppConstants.formatCurrency(t.amount, vm.currency)}",
+              AppConstants.formatCurrency(t.amount, vm.currency),
               style: TextStyle(
                 color: isIncome
                     ? AppConstants.incomeColor
@@ -335,30 +320,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.receipt_long, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            AppConstants.noTransactions,
-            style: const TextStyle(color: Colors.grey),
+  Widget _buildEmptyState() => Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.receipt_long, size: 80, color: Colors.grey.shade400),
+        const SizedBox(height: 16),
+        Text(
+          AppConstants.noTransactions,
+          style: const TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
           ),
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
-            ),
-            icon: const Icon(Icons.add),
-            label: const Text(AppConstants.addTransactionButton),
-          ),
-        ],
-      ),
-    );
-  }
+          icon: const Icon(Icons.add),
+          label: const Text(AppConstants.addTransactionButton),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildSummaryItem(
     String title,
@@ -400,38 +383,22 @@ class _HomeScreenState extends State<HomeScreen> {
         TabItem(icon: Icons.settings_rounded, title: 'Cài đặt'),
       ],
       initialActiveIndex: _selectedIndex,
-      onTap: (index) {
-        setState(() => _selectedIndex = index);
-
-        switch (index) {
-          case 0:
-            break;
-          case 1:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ExpenseScreen()),
-            );
-            break;
-          case 2:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
-            );
-            break;
-          case 3:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const IncomeScreen()),
-            );
-            break;
-          case 4:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
-            break;
-        }
-      },
+      onTap: _onTabSelected,
     );
+  }
+
+  void _onTabSelected(int index) {
+    setState(() => _selectedIndex = index);
+    final pages = [
+      null,
+      const ExpenseScreen(),
+      const AddTransactionScreen(),
+      const IncomeScreen(),
+      const SettingsScreen(),
+    ];
+
+    if (index > 0) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => pages[index]!));
+    }
   }
 }
